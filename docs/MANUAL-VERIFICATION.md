@@ -99,6 +99,10 @@ unless the app injects something).
 | Cursor returns to the same pixel | pass — X=4404 Y=1280 before and after two nudges |
 | Settings persist across restart | pass |
 | Start with Windows writes the HKCU Run key | pass — quoted absolute path |
+| Display stays awake while enabled and idle | pass — confirmed by the user watching a real screen |
+
+All seven steps pass. The tool does what it claims on Windows 11 Pro build
+26200.
 
 **Bug found by this run:** the `INPUT` struct was 48 bytes instead of 40, so
 `SendInput` rejected every call with `ERROR_INVALID_PARAMETER` and no nudge was
@@ -107,5 +111,5 @@ with compile-time size assertions. Nothing short of running the binary would
 have caught this — it compiled, vetted for the Windows target, and passed the
 full test suite.
 
-**Still unverified:** whether the display itself stays awake (step 7). That
-requires watching a real screen over time and cannot be sampled from a script.
+**Nothing outstanding.** Step 7 was the last item that could not be sampled
+from a script; it was confirmed by watching the actual display.

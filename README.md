@@ -273,13 +273,20 @@ Design notes and the full implementation plan are in [`docs/`](docs/).
 Working and complete for its stated scope. It is a small tool that does one
 thing; there is no roadmap, and features beyond the above are not planned.
 
-**Verification status, stated plainly:** the scheduling logic is covered by 27
+**Verification status, stated plainly:** the scheduling logic is covered by 28
 automated tests running under the race detector on every push. The Windows
 syscall layer compiles and passes `GOOS=windows go vet`, but CI cannot execute
 a Windows binary or inject Windows input — so that layer is verified by
-inspection and by manual testing, not by machine. See
-[`docs/BUILD-NOTES.md`](docs/BUILD-NOTES.md) and
-[`docs/MANUAL-VERIFICATION.md`](docs/MANUAL-VERIFICATION.md).
+inspection plus manual testing on real hardware, not by machine.
+
+As of v0.2.1, all seven manual checks pass on Windows 11 Pro build 26200,
+including measured confirmation that `SendInput` reaches the system and that
+the display stays awake. Details and method in
+[`docs/MANUAL-VERIFICATION.md`](docs/MANUAL-VERIFICATION.md); the history of
+what changed and why is in [`docs/BUILD-NOTES.md`](docs/BUILD-NOTES.md).
+
+That hardware pass matters: it is what caught the `SendInput` defect in v0.1.0
+and v0.2.0, which the entire automated suite had waved through.
 
 Bug reports are welcome, especially anything about behaviour on real hardware.
 
