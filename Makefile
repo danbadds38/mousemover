@@ -10,9 +10,11 @@ export GID ?= $(shell id -g)
 COMPOSE := docker compose
 RUN     := $(COMPOSE) run --rm dev
 
-.PHONY: check vet test build-windows clean \
-        docker-check docker-build-windows docker-shell docker-image \
-        docker-run docker-clean
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+
+.PHONY: check vet test build-windows dist clean \
+        docker-check docker-build-windows docker-dist docker-shell \
+        docker-image docker-run docker-clean
 
 ## --- native targets -------------------------------------------------------
 
@@ -28,6 +30,11 @@ build-windows:
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 \
 		go build -ldflags "-s -w -H windowsgui" -o dist/mousemover.exe ./cmd/mousemover
 
+# Native release build: full gate, then report what was produced.
+dist: check
+	@echo "built $(VERSION): dist/mousemover.exe"
+	@ls -lh dist/mousemover.exe
+
 clean:
 	rm -rf dist
 
@@ -41,6 +48,10 @@ docker-check:
 
 docker-build-windows:
 	$(RUN) make build-windows
+
+# Containerised release build — the authoritative one.
+docker-dist:
+	$(RUN) make dist
 
 docker-shell:
 	$(RUN) bash
