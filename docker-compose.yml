@@ -1,0 +1,21 @@
+services:
+  dev:
+    build: .
+    image: mousemover-dev:1.26.5
+    # Run as the invoking host user so dist/ and go.sum come out host-owned
+    # rather than root-owned. UID/GID are exported by the Makefile.
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /src
+    volumes:
+      - .:/src
+      - go-build-cache:/cache/go-build
+      - go-mod-cache:/cache/go-mod
+    environment:
+      GOCACHE: /cache/go-build
+      GOMODCACHE: /cache/go-mod
+      GOFLAGS: -buildvcs=false
+    # No ports, no network services — this is a build box.
+
+volumes:
+  go-build-cache:
+  go-mod-cache:
