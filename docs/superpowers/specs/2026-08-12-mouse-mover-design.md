@@ -40,11 +40,12 @@ installer, no admin rights.
 
 ## Architecture
 
-Single Go module, `github.com/dbaddeley/mousemover`, producing one binary built
-with `-ldflags "-H windowsgui"`.
+Single Go module named `mousemover` (no remote — this is a local-only repo, so
+the module path carries no hosting prefix), producing one binary built with
+`-ldflags "-H windowsgui"`.
 
 ```
-main.go                  wire-up only
+cmd/mousemover/main.go   wire-up only
 internal/config          persisted settings
 internal/winapi          thin typed syscall wrappers (Windows-only)
 internal/mover           scheduling engine (platform-agnostic, fully tested)
@@ -116,7 +117,12 @@ Wrappers over `golang.org/x/sys/windows`, no cgo:
 - `SetAutostart(bool) error`, `IsAutostart() (bool, error)` — value
   `mousemover` under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`,
   set to the quoted absolute path from `os.Executable()`.
-- `Notify(title, body string)` — tray balloon for surfaced errors.
+
+Errors surface through the log file only. An earlier draft of this spec called
+for balloon notifications via a `Notify` helper; `fyne.io/systray` exposes no
+balloon/notification API, and pulling in a second dependency or hand-rolling
+`Shell_NotifyIcon` to show a toast is not worth it for a tool whose failure
+modes are all non-urgent. The tooltip and icon already convey live state.
 
 A `//go:build !windows` sibling file provides the same symbols returning
 `ErrUnsupported`, so `go vet` and `go test` pass on Linux.
@@ -184,20 +190,36 @@ errors log at error and also raise a balloon notification.
 | Failure | Behaviour |
 |---|---|
 | Config missing/corrupt | Defaults used, warning logged, file rewritten on next save |
-| Config save fails | Error logged + balloon; in-memory state still applies |
-| `SendInput` fails | Error logged + balloon (rate-limited to once/minute); loop continues |
+| Config save fails | Error logged; in-memory state still applies |
+| `SendInput` fails | Error logged (rate-limited to once/minute); loop continues |
 | `GetLastInputInfo` fails | Treated as "user is active" — no nudge. Fail safe. |
-| Registry write fails | Error logged + balloon; checkbox reverts to actual state |
+| Registry write fails | Error logged; checkbox re-reads the registry and shows the actual state |
 | Tray init fails | Fatal — log and exit non-zero, nothing else is useful |
 
 ## Build and Delivery
+
+The toolchain is containerised so the build depends on nothing but Docker:
+
+```bash
+make docker-check   # vet + race tests + windows cross-compile, in-container
+make docker-dist    # the same, then report the produced binary
+```
+
+Inside the container (and on any host with Go 1.26+) the underlying command is:
 
 ```bash
 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 \
   go build -ldflags "-s -w -H windowsgui" -o dist/mousemover.exe ./cmd/mousemover
 ```
 
-`Makefile` targets: `test`, `vet`, `build-windows`, `check` (all three).
+`Dockerfile` pins `golang:1.26.5-bookworm`. `docker-compose.yml` bind-mounts the
+repo, runs as the host UID/GID so artefacts are not root-owned, and keeps the
+Go build and module caches on named volumes.
+
+Native `Makefile` targets: `vet`, `test`, `build-windows`, `check`, `dist`.
+Containerised wrappers: `docker-image`, `docker-check`, `docker-build-windows`,
+`docker-dist`, `docker-shell`, `docker-run`, `docker-clean`. The wrappers invoke
+the native targets inside Compose; native targets never reference Docker.
 `README.md` covers what it does, how to run it, the tray menu, config file
 location, and an explicit note that managed/corporate endpoints may flag
 synthetic-input tools.
