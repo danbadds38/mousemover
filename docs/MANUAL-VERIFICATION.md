@@ -83,3 +83,29 @@ If any step misbehaves, please open an issue including:
 - Windows version (`winver`)
 - The contents of `%APPDATA%\mousemover\mousemover.log`
 - The contents of `%APPDATA%\mousemover\config.json`
+
+## Verified on hardware — 2026-08-13
+
+Windows 11 Pro, build 26200. Method: sample `GetLastInputInfo` once a second
+from PowerShell (the probe itself generates no input, so idle climbs freely
+unless the app injects something).
+
+| Check | Result |
+| --- | --- |
+| Starts, no console window, tray icon appears | pass |
+| Tray menu renders and responds to clicks | pass |
+| Nudge fires at 5s threshold / 5s interval | pass — idle sawtooths 0.8s → 4.8s (baseline with app stopped: climbs unbounded to 44s) |
+| Nudge fires at 1m threshold / 30s interval | pass — nudge landed at 85s idle, within the expected `threshold + interval` bound |
+| Cursor returns to the same pixel | pass — X=4404 Y=1280 before and after two nudges |
+| Settings persist across restart | pass |
+| Start with Windows writes the HKCU Run key | pass — quoted absolute path |
+
+**Bug found by this run:** the `INPUT` struct was 48 bytes instead of 40, so
+`SendInput` rejected every call with `ERROR_INVALID_PARAMETER` and no nudge was
+ever injected. Releases v0.1.0 and v0.2.0 are non-functional. Fixed in v0.2.1
+with compile-time size assertions. Nothing short of running the binary would
+have caught this — it compiled, vetted for the Windows target, and passed the
+full test suite.
+
+**Still unverified:** whether the display itself stays awake (step 7). That
+requires watching a real screen over time and cannot be sampled from a script.

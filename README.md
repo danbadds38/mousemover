@@ -79,6 +79,11 @@ your *idle threshold*, it does nothing at all. Only once you have genuinely
 stopped touching the machine does it inject a one-pixel relative move followed
 immediately by the opposite move.
 
+**Timing:** because the check is periodic, a nudge lands at the first check
+after the threshold is crossed — so the real bound on idle time is
+`idle threshold + nudge interval`, up to 90 seconds with the defaults. Size
+your screen timeout against that number, not against the threshold alone.
+
 Two consequences worth knowing:
 
 - **It will never fight your cursor.** While you are actively working, it is
@@ -130,10 +135,21 @@ Click the overflow arrow (`^`) next to the clock; drag the icon onto the
 taskbar to pin it. If it is not there either, check the log (below) — the app
 may have exited during startup.
 
-**It's enabled but the screen still sleeps.** Check that your idle threshold is
-*shorter* than your Windows screen-off timeout, otherwise the display sleeps
-before the first nudge ever fires. With the 1-minute default, any screen
-timeout above ~2 minutes is fine. Also confirm the icon is blue, not grey.
+**It's enabled but the screen still sleeps.** Your Windows screen-off timeout
+needs to be longer than **idle threshold + nudge interval**, not just longer
+than the threshold.
+
+The idle check runs on a fixed interval, so a nudge fires at the first check
+*after* the threshold is crossed — worst case, one full interval late. With the
+defaults (1 minute threshold, 30 second interval) the pointer can sit idle for
+up to **90 seconds** before it is nudged, so a screen timeout of 1 minute would
+still win the race. Measured on real hardware: with those defaults, observed
+idle peaked at 83 seconds before the nudge landed.
+
+Give yourself margin — a 3-minute screen timeout against the 1-minute default
+is comfortable. If you need to defeat a short timeout, lower *both* values:
+a 30-second threshold with a 15-second interval bounds worst-case idle at 45
+seconds. Also confirm the icon is blue, not grey.
 
 **Nothing happens / no nudges.** Read `%APPDATA%\mousemover\mousemover.log`.
 Every failure is recorded there with a reason. A repeated
