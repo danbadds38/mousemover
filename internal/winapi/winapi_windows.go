@@ -44,12 +44,36 @@ type mouseInput struct {
 
 // input mirrors INPUT for the INPUT_MOUSE case. The explicit padding after
 // inputType matches the 8-byte alignment the union has on amd64.
+//
+// Do NOT add trailing padding here. MOUSEINPUT (32 bytes) is already the
+// largest member of INPUT's union, so the struct ends where MOUSEINPUT ends:
+// 8 bytes of header plus 32 = 40. An earlier version carried a spurious
+// [8]byte tail, making the struct 48 bytes; SendInput validates its cbSize
+// argument against the real sizeof(INPUT) and rejected every call with
+// ERROR_INVALID_PARAMETER ("The parameter is incorrect"), so no nudge ever
+// reached the system. The assertions below make that failure a compile error
+// rather than a silent runtime one.
 type input struct {
 	inputType uint32
 	_         uint32
 	mi        mouseInput
-	_         [8]byte
 }
+
+// Win32 struct sizes on amd64. SendInput compares its cbSize argument against
+// these exactly.
+const (
+	wantMouseInputSize = 32
+	wantInputSize      = 40
+)
+
+// Compile-time size assertions: if either struct's layout drifts, the index
+// below goes out of range and the Windows build fails to compile. CI
+// cross-compiles for Windows on every push, so this is checked continuously
+// even though the test suite itself runs on Linux.
+var (
+	_ = [1]struct{}{}[unsafe.Sizeof(mouseInput{})-wantMouseInputSize]
+	_ = [1]struct{}{}[unsafe.Sizeof(input{})-wantInputSize]
+)
 
 const (
 	inputMouse         = 0

@@ -130,3 +130,11 @@ func TestSaveLeavesNoTempFile(t *testing.T) {
 		}
 	}
 }
+
+func TestDurationStringIsHumanReadable(t *testing.T) {
+	// Regression: slog printed raw nanoseconds in the startup line until
+	// Duration grew a String method.
+	if got, want := Duration(90*time.Second).String(), "1m30s"; got != want {
+		t.Errorf("String() = %q, want %q", got, want)
+	}
+}
