@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"mousemover/internal/config"
+	"github.com/danbadds38/mousemover/internal/config"
 )
 
 func TestTooltipReflectsState(t *testing.T) {

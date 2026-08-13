@@ -9,11 +9,11 @@ package main
 import (
 	"context"
 
-	"mousemover/internal/applog"
-	"mousemover/internal/config"
-	"mousemover/internal/mover"
-	"mousemover/internal/tray"
-	"mousemover/internal/winapi"
+	"github.com/danbadds38/mousemover/internal/applog"
+	"github.com/danbadds38/mousemover/internal/config"
+	"github.com/danbadds38/mousemover/internal/mover"
+	"github.com/danbadds38/mousemover/internal/tray"
+	"github.com/danbadds38/mousemover/internal/winapi"
 )
 
 func main() {

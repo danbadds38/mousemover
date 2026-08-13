@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"mousemover/internal/config"
+	"github.com/danbadds38/mousemover/internal/config"
 )
 
 // fakePlatform records jiggles and returns a settable idle time.

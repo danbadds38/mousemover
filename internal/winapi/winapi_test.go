@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"mousemover/internal/mover"
+	"github.com/danbadds38/mousemover/internal/mover"
 )
 
 // TestWinSatisfiesPlatform is a compile-time contract check: if Win ever

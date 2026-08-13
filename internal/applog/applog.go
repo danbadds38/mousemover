@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"mousemover/internal/config"
+	"github.com/danbadds38/mousemover/internal/config"
 )
 
 // New opens the log file in append mode and returns a logger plus a close

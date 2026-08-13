@@ -40,9 +40,13 @@ installer, no admin rights.
 
 ## Architecture
 
-Single Go module named `mousemover` (no remote — this is a local-only repo, so
-the module path carries no hosting prefix), producing one binary built with
-`-ldflags "-H windowsgui"`.
+Single Go module named `github.com/danbadds38/mousemover`, producing one binary
+built with `-ldflags "-H windowsgui"`.
+
+> **Amended 2026-08-12:** this spec originally specified the bare module path
+> `mousemover`, on the reasoning that the repo was local-only and needed no
+> hosting prefix. The repo was subsequently published, making that reasoning
+> obsolete; the module path was renamed to match its canonical location.
 
 ```
 cmd/mousemover/main.go   wire-up only

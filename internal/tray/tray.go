@@ -9,10 +9,10 @@ import (
 
 	"fyne.io/systray"
 
-	"mousemover/assets"
-	"mousemover/internal/config"
-	"mousemover/internal/mover"
-	"mousemover/internal/winapi"
+	"github.com/danbadds38/mousemover/assets"
+	"github.com/danbadds38/mousemover/internal/config"
+	"github.com/danbadds38/mousemover/internal/mover"
+	"github.com/danbadds38/mousemover/internal/winapi"
 )
 
 // choice is one entry in a duration radio group.

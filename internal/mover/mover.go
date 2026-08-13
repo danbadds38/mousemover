@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"mousemover/internal/config"
+	"github.com/danbadds38/mousemover/internal/config"
 )
 
 // Platform is the operating-system surface the engine needs.

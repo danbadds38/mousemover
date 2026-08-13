@@ -12,7 +12,10 @@
 
 ## Global Constraints
 
-- Module path is `mousemover` (local-only repo, no hosting prefix).
+- Module path is `github.com/danbadds38/mousemover`. (This plan was executed
+  when the path was the bare `mousemover`; it was renamed after publication.
+  Any `mousemover/internal/...` import shown below is now prefixed with
+  `github.com/danbadds38/`.)
 - `CGO_ENABLED=0` everywhere. No cgo in any dependency or build.
 - `internal/mover` MUST NOT import `internal/winapi`. Violating this makes the engine untestable and fails review.
 - Every Windows-only file needs a `//go:build !windows` sibling providing identical symbols, so `go vet ./...` and `go test ./...` pass on Linux.

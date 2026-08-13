@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test (race detector)
+        run: go test -race ./...
+
+      # The syscall layer only compiles under GOOS=windows, so vetting the
+      # Linux target alone would never look at it.
+      - name: Vet for the Windows target
+        run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go vet ./...
+
+      - name: Cross-compile for Windows
+        run: |
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 \
+            go build -ldflags "-s -w -H windowsgui" \
+            -o dist/mousemover.exe ./cmd/mousemover
+          file dist/mousemover.exe | grep -q "PE32+ executable (GUI) x86-64" \
+            || { echo "::error::built artifact is not a Windows GUI binary"; exit 1; }
+
+      # internal/mover must never reach the OS directly — that boundary is what
+      # makes the scheduling logic testable off Windows. Enforce it in CI so it
+      # cannot rot.
+      - name: Enforce the mover/winapi isolation boundary
+        run: |
+          if go list -deps ./internal/mover | grep -q winapi; then
+            echo "::error::internal/mover imports internal/winapi; it must depend only on the Platform interface"
+            exit 1
+          fi
+          echo "isolation boundary intact"

@@ -1,0 +1,99 @@
+name: Release
+
+# Tag-driven: pushing a v* tag builds the Windows binary and attaches it to a
+# GitHub release. The gate runs FIRST — a tag can never publish a binary whose
+# tests did not pass.
+on:
+  push:
+    tags:
+      - "v*"
+  # Manual runs build and upload the artifact but do not create a release,
+  # which makes it safe to smoke-test this workflow without cutting a version.
+  workflow_dispatch:
+
+permissions:
+  contents: write # required to create the release and upload assets
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # full history so `git describe` can find the tag
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # The same three checks as `make check`, run directly rather than
+      # through Docker: the container exists to pin the toolchain, and
+      # setup-go already pins it from go.mod.
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race ./...
+
+      - name: Vet for the Windows target
+        run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go vet ./...
+
+      - name: Build Windows binary
+        run: |
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 \
+            go build -ldflags "-s -w -H windowsgui" \
+            -o dist/mousemover.exe ./cmd/mousemover
+
+      # Proves the artifact is what we claim before anyone downloads it.
+      - name: Verify the artifact is a Windows GUI binary
+        run: |
+          file dist/mousemover.exe
+          file dist/mousemover.exe | grep -q "PE32+ executable (GUI) x86-64" \
+            || { echo "::error::built artifact is not a Windows GUI binary"; exit 1; }
+
+      - name: Generate checksum
+        run: |
+          cd dist
+          sha256sum mousemover.exe > mousemover.exe.sha256
+          cat mousemover.exe.sha256
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mousemover-windows-amd64
+          path: |
+            dist/mousemover.exe
+            dist/mousemover.exe.sha256
+
+      - name: Create release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/mousemover.exe
+            dist/mousemover.exe.sha256
+          generate_release_notes: true
+          body: |
+            ## Install
+
+            Download `mousemover.exe` below, put it anywhere (for example
+            `%LOCALAPPDATA%\Programs\`), and double-click it. No installer,
+            no admin rights, no console window — look for the icon in the
+            notification area.
+
+            Verify the download if you like:
+
+            ```powershell
+            Get-FileHash mousemover.exe -Algorithm SHA256
+            ```
+
+            and compare against `mousemover.exe.sha256`.
+
+            ## Heads-up
+
+            This tool injects synthetic mouse input via the standard Windows
+            `SendInput` API. Nothing is hidden or obfuscated, but some
+            corporate endpoint-security products flag synthetic-input tools
+            on principle. If your machine is managed, check your
+            acceptable-use policy first.

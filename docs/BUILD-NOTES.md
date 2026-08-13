@@ -19,13 +19,31 @@ Two mechanical differences, neither affecting behaviour:
    verbatim would have left a second `.PHONY` line and a variable defined below
    its first use. Same targets, same behaviour.
 
+## Post-publication changes
+
+Made after the initial implementation, once the repo was published:
+
+3. **Module path renamed** from the bare `mousemover` to
+   `github.com/danbadds38/mousemover`. The original path was justified by the
+   repo being local-only; publishing invalidated that. Mechanical change across
+   seven files, gate green before and after. `go mod tidy` also promoted
+   `fyne.io/systray` from an incorrect `// indirect` marking to a direct
+   requirement.
+
+4. **CI and release workflows added.** `ci.yml` runs the gate on every push and
+   PR, and additionally enforces the `mover`/`winapi` isolation boundary that
+   was previously only checked by hand. `release.yml` builds and attaches a
+   signed-by-checksum binary on every `v*` tag, running the full gate first so
+   a tag can never publish an untested artifact.
+
 ## Not verified by machine — carried forward to the user
 
 The Windows syscall layer (`internal/winapi/winapi_windows.go`) is compiled and
 vetted for the Windows target but **never executed** — no Linux build machine
-can run a PE binary or inject Windows input. `GetLastInputInfo`'s tick-wrap
-arithmetic, the `SendInput` struct padding, and the registry autostart calls
-are correct by inspection only.
+or CI runner can run a PE binary or inject Windows input. `GetLastInputInfo`'s
+tick-wrap arithmetic, the `SendInput` struct padding, and the registry
+autostart calls are correct by inspection only.
 
-The plan's "Manual Verification (user, on Windows)" section is the real test of
-that layer. It is seven steps and takes about five minutes.
+[`MANUAL-VERIFICATION.md`](MANUAL-VERIFICATION.md) is the real test of that
+layer. It is seven steps and takes about five minutes, and should be re-run
+after any change to `winapi_windows.go`.
